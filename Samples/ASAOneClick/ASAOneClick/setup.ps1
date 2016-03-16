@@ -196,11 +196,11 @@ function InitSubscription{
         $supportedMode=$subList[$rowNum-1].SupportedModes
 
         #Checks if the subscription supports ASM. There are some subscriptions which supports only ARM and they will not work.
-        while(-not $supportedMode.Contains('AzureServiceManagement')){
-            Write-Host 'The selected subscription does not support AzureServiceManagement. Please select a different subscription'
-            $rowNum = Read-Host 'Enter subscription row number' 
-            $supportedMode=$subList[$rowNum-1].SupportedModes
-        }
+        #while(-not $supportedMode.Contains('AzureServiceManagement')){
+        #    Write-Host 'The selected subscription does not support AzureServiceManagement. Please select a different subscription'
+        #    $rowNum = Read-Host 'Enter subscription row number' 
+        #    $supportedMode=$subList[$rowNum-1].SupportedModes
+        #}
 
        
         $global:subscriptionID = $subList[$rowNum-1].SubscriptionId;
@@ -226,8 +226,7 @@ function InitSubscription{
 function RegisterAzureProvider($providerNamespace){
 
     try{
-        Switch-AzureMode -Name AzureResourceManager
-        Register-AzureProvider -Force -ProviderNamespace $providerNamespace 
+        Register-AzureRmResourceProvider -Force -ProviderNamespace $providerNamespace 
         Write-Host 'Subscription ' $global:subscriptionID 'successfully registered to ' $providerNamespace
         
     } 
@@ -239,12 +238,11 @@ function RegisterAzureProvider($providerNamespace){
 }
 
 function CreateResourceGroup{
-    Switch-AzureMode -Name AzureResourceManager
     #create resource group
     $rg = $null
     try{
         Write-Host 'Creating Resource Group [' $global:resourceGroupName ']......' -NoNewline
-        $rg = New-AzureResourceGroup -Name ($global:resourceGroupName) -location $global:locationMultiword -ErrorAction Stop -Force | out-null
+        $rg = New-AzureRmResourceGroup -Name ($global:resourceGroupName) -location $global:locationMultiword -ErrorAction Stop -Force | out-null
         #will update if already exists
     } 
     catch{
@@ -256,12 +254,11 @@ function CreateResourceGroup{
 }
 
 function DeleteResourceGroup{
-    Switch-AzureMode AzureResourceManager
     try{
         Write-Host 'Deleting Resource Group [' $global:resourceGroupName ']......Continue (Y/N)?' -NoNewline
         $ans=Read-Host
         if($ans.ToLower() -eq 'y'){
-            Remove-AzureResourceGroup -Name $global:resourceGroupName -ErrorAction Stop -Force
+            Remove-AzureRmResourceGroup -Name $global:resourceGroupName -ErrorAction Stop -Force
             Write-Host 'deleted.'
         }
     }
@@ -278,7 +275,6 @@ function DeleteResourceGroup{
 function CreateSQLServerAndDB{
     process{
         Write-Host 'Creating SQL Server ...... ' -NoNewline
-        Switch-AzureMode AzureServiceManagement
         
         #create sql server & DB
         $sqlsvr = $null
@@ -339,7 +335,6 @@ function CreateSQLServerAndDB{
 }
 
 function DeleteSQLServerAndDB{
-    Switch-AzureMode AzureServiceManagement
     $sqlsvrname = Get-Content $global:configPath
     if($sqlsvrname.Length -gt 0) {
         try{
@@ -373,8 +368,7 @@ function CreateASAJob{
 	
 	Write-Host "Creating the ASA Job......" -NoNewline
 	try{
-        Switch-AzureMode AzureResourceManager
-        $ASAJob = New-AzureStreamAnalyticsJob -File "temp\json\asa\ASAjob.json" -Name $global:defaultResourceName -ResourceGroupName $global:resourceGroupName -ErrorAction Stop
+        $ASAJob = New-AzureRmStreamAnalyticsJob -File "temp\json\asa\ASAjob.json" -Name $global:defaultResourceName -ResourceGroupName $global:resourceGroupName -ErrorAction Stop
 	    if ($ASAJob.JobName -eq $global:defaultResourceName){
             Write-Host 'Created.'
 	    }
@@ -387,7 +381,6 @@ function CreateASAJob{
 
 function DeleteASAJob{
     Process{
-        Switch-AzureMode AzureResourceManager
         $retryCount = 2;
         $done = $false
         $errormsg = ''
@@ -396,7 +389,7 @@ function DeleteASAJob{
                 Write-Host 'Deleting ASA Job [' $global:defaultResourceName ']......Continue (Y/N)?' -NoNewline
                 $ans=Read-Host
                 if($ans.ToLower() -eq 'y'){
-                    Remove-AzureStreamAnalyticsJob -Name $global:defaultResourceName -ResourceGroupName $global:resourceGroupName -Force -ErrorAction Stop | out-null
+                    Remove-AzureRmStreamAnalyticsJob -Name $global:defaultResourceName -ResourceGroupName $global:resourceGroupName -Force -ErrorAction Stop | out-null
                     $done = $true
                     Write-Host 'Deleted.'     
                 }           
@@ -423,7 +416,6 @@ function DeleteASAJob{
 function CreateEventHubandSBNamespace{
   
     Process{
-        Switch-AzureMode AzureServiceManagement
         $namespace = $null
 		$eventhub = $null
 		
@@ -475,7 +467,6 @@ function CreateEventHubandSBNamespace{
 }
 
 function DeleteEventHubandSBNamespace{
-    Switch-AzureMode AzureServiceManagement	
 	try{
         $currentnamespace = Get-AzureSBNamespace -Name $global:ServiceBusNamespace
 	}
@@ -529,7 +520,7 @@ function PopulateSensorAlerts{
     #Starting the ASA Job
     Write-Host Starting the ASA Job [$global:defaultResourceName]. This may take few minutes.....
     try{
-        $StartASAJob = Start-AzureStreamAnalyticsJob -Name $global:defaultResourceName -ResourceGroupName $global:resourceGroupName
+        $StartASAJob = Start-AzureRmStreamAnalyticsJob -Name $global:defaultResourceName -ResourceGroupName $global:resourceGroupName
         if ($StartASAJob -eq "True"){
 		    Write-Host 'started.'
         }

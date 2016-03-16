@@ -165,7 +165,8 @@ function InitSubscription{
     Get-AzureAccount | ForEach-Object { Remove-AzureAccount $_.ID -Force -WarningAction SilentlyContinue }
 
     #login
-    Add-AzureAccount -WarningAction SilentlyContinue | out-null
+    Add-AzureRmAccount -WarningAction SilentlyContinue | out-null
+	Add-AzureAccount -WarningAction SilentlyContinue | out-null
     $account = Get-AzureAccount
 	Write-Host You are signed-in with $account.id
 
